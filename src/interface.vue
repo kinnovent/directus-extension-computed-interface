@@ -1,25 +1,30 @@
 <template>
-	<div v-if="mode" :style="customCss">
-		<span class="prefix">{{ prefix }}</span>
-		<span class="computed-value">{{ computedValue }}</span>
-		<span class="suffix">{{ suffix }}</span>
-	</div>
-	<v-input
-		v-else
-		v-bind="$attrs"
-		:field="field"
-		:collection="collection"
-		:primary-key="primaryKey"
-		:model-value="value"
-		@update:model-value="$emit('input', $event)"
-	/>
-	<v-notice v-if="errorMsg" type="danger">{{ errorMsg }}</v-notice>
+  <div
+    v-if="mode"
+    :style="customCss"
+  >
+    <span class="prefix">{{ prefix }}</span>
+    <span class="computed-value">{{ computedValue }}</span>
+    <span class="suffix">{{ suffix }}</span>
+  </div>
+  <v-input
+    v-else
+    v-bind="$attrs"
+    :field="field"
+    :collection="collection"
+    :primary-key="primaryKey"
+    :model-value="value"
+    @update:model-value="$emit('input', $event)"
+  />
+  <v-notice
+    v-if="errorMsg"
+    type="danger"
+  >{{ errorMsg }}</v-notice>
 </template>
 
 <script lang="ts">
-import { ComputedRef, defineComponent, inject, ref, watch } from 'vue';
-import { parseExpression } from './operations';
-import { useDeepValues, useCollectionRelations } from './utils';
+import {  defineComponent, inject, ref, watch } from 'vue';
+import { parseExpression, getVariables } from './operations';
 import { useCollection } from '@directus/extensions-sdk';
 
 export default defineComponent({
@@ -67,21 +72,15 @@ export default defineComponent({
 	},
 	emits: ['input'],
 	setup(props, { emit }) {
-		const defaultValues = useCollection(props.collection).defaults
+		const defaultValues = useCollection(props.collection).defaults;
 		const computedValue = ref<string | number | null>(props.value);
-		const relations = useCollectionRelations(props.collection);
-		const values = useDeepValues(
-			inject<ComputedRef<Record<string, any>>>('values')!,
-			relations,
-			props.collection,
-			props.field,
-			props.primaryKey,
-			props.template
-		);
+
+		const FieldValues = inject('values', ref<Record<string, any>>({}));
+
 		const errorMsg = ref<string | null>(null);
 
-		if (values) {
-			watch(values, () => {
+		if (FieldValues) {
+			watch(FieldValues, () => {
 				const newValue = compute();
 				computedValue.value = newValue;
 
@@ -103,9 +102,12 @@ export default defineComponent({
 
 		function compute() {
 			try {
+				if (getVariables(props.template).some((item) => !FieldValues.value[item])) {
+					return;
+				}
 				const res = props.template.replace(/{{.*?}}/g, (match) => {
 					const expression = match.slice(2, -2).trim();
-					return parseExpression(expression, values.value, defaultValues.value);
+					return parseExpression(expression, FieldValues.value, defaultValues.value);
 				});
 
 				errorMsg.value = null;

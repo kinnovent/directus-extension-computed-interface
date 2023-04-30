@@ -17,6 +17,9 @@ export default defineInterface({
 			meta: {
 				width: 'full',
 				interface: 'input',
+				options: {
+					placeholder:'{{ MULTIPLY(a, b) }}'
+				},
 			},
 		},
 		{

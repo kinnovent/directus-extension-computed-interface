@@ -1,14 +1,18 @@
 import { findValueByPath } from './utils';
 
-export function parseExpression(exp: string, values: Record<string, any>, defaultValues: Record<string, any> = {}): any {
+export function parseExpression(
+	exp: string,
+	values: Record<string, any>,
+	defaultValues: Record<string, any> = {}
+): any {
 	if (values) {
 		exp = exp.trim();
 
 		let { value, found } = findValueByPath(values, exp);
 
-		if(!found || value === null) {
+		if (!found || value === null) {
 			let defaults = findValueByPath(defaultValues, exp);
-			if(defaults.found) {
+			if (defaults.found) {
 				return defaults.value;
 			}
 		}
@@ -129,7 +133,12 @@ export function parseExpression(exp: string, values: Record<string, any>, defaul
 				}
 			} else if (op === 'ASUM' && args.length === 2) {
 				// aggregated sum
-				return (values[args[0]] as unknown[])?.reduce((acc, item) => acc + parseExpression(args[1], item as typeof values, {}), 0) ?? 0;
+				return (
+					(values[args[0]] as unknown[])?.reduce(
+						(acc, item) => acc + parseExpression(args[1], item as typeof values, {}),
+						0
+					) ?? 0
+				);
 			} else if (args.length === 2) {
 				// binary operators
 				const valueA = parseExpression(args[0], values, defaultValues);
@@ -228,7 +237,9 @@ export function parseOp(exp: string): {
 		const op = match[1] as string;
 		const innerExp = match[2] as string;
 
-		let braceCount = 0, i = 0, j = 0;
+		let braceCount = 0,
+			i = 0,
+			j = 0;
 		for (; i < innerExp.length; i += 1) {
 			const c = innerExp[i];
 			if (c === '(') braceCount += 1;
@@ -269,3 +280,14 @@ export function toSlug(str: unknown) {
 
 	return res;
 }
+//解析字符串返回字段
+export const getVariables = (str: string): string[] => {
+	const start = str.indexOf('{{');
+	const end = str.indexOf('}}');
+	if (start === -1 || end === -1) return []; // 如果没有{{或}}，则返回空数组
+	const expression = str.slice(start + 2, end).trim(); // 直接截取{{和}}之间的部分
+	const regex = /\w+/g;
+	let variables = expression.match(regex);
+	variables = variables.filter((v) => !/^[A-Z]+$/.test(v)); // 使用自定义的函数来过滤
+	return variables;
+};
