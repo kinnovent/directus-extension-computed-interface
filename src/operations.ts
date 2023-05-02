@@ -325,13 +325,7 @@ export function parseOp(exp: string): {
 
 		let braceCount = 0,
 			i = 0,
-<<<<<<< HEAD
 			j = 0;
-=======
-			j = 0,
-			inQuote = false,
-			escapeNext = false;
->>>>>>> upstream/main
 		for (; i < innerExp.length; i += 1) {
 			const c = innerExp[i];
 			if (c === '(' && !inQuote) braceCount += 1;
